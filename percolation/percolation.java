@@ -1,95 +1,119 @@
-import edu.princeton.cs.algs4.StdRandom;
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
+// Models an N-by-N percolation system.
 public class Percolation {
-    private boolean[][] opened;
-    private int top;
-    private int bottom;
-    private WeightedQuickUnionUF uf;
-    private WeightedQuickUnionUF uf2;
-    private int len;
-   private int  numberofsites ;
+    private final WeightedQuickUnionUF uf;
+    private final int size;
+    private boolean[][] grid;
+    private int numberofsites;
+    private final int top;
+    private final int bottom;
 
-    public Percolation(int n){
-
-        if (N <= 0) {
-            throw new IllegalArgumentException("Given N <= 0");
-        }
-        opened = new boolean[N][N];
-        uf     = new WeightedQuickUnionUF(N*N + 2);
-        uf2    = new WeightedQuickUnionUF(N*N + 1);
-        top    = 0;
-        bottom = N*N + 1;
-        len    = N;
+    // Create an N-by-N grid, with all sites blocked.
+    public Percolation(int n) {
+        if (n < 1)
+            throw new IndexOutOfBoundsException("N must be greater than zero!");
+        grid = new boolean[n][n];
+        size = n;
+        uf = new WeightedQuickUnionUF(n * n + 2); // N*N+2 sites
         numberofsites = 0;
+        top = 0;
+        bottom = n * n + 1;
+
         // Make all sites Blocked
         for (int row = 0; row < n; row++) {
             for (int col = 0; col < n; col++) {
-                opened[row][col] = false;
+                grid[row][col] = false;
             }
-    }
-    public void open(int row, int col){
-        if (checkIndex(i, j)) {
-            opened[i-1][j-1] = true;
-
-            // Connect the top to the first (row,col) and the bottom the last (row,col) in maped one
-            if (i == 1) {
-                uf.union(j-1, top);
-                uf2.union(j-1, top);
-            }
-            if (i == len) uf.union((i-1)*len+j-1, bottom);
-            if (i > 1   && isOpen(i-1, j)) {
-                uf.union((i-1)*len+j-1, (i-2)*len+j-1);// connect to top neighbour
-                uf2.union((i-1)*len+j-1, (i-2)*len+j-1);
-            }
-            if (i < len && isOpen(i+1, j)) {
-                uf.union((i-1)*len+j-1, i*len+j-1);// connect to bottom neighbour
-                uf2.union((i-1)*len+j-1, i*len+j-1);
-            }
-            if (j > 1   && isOpen(i, j-1)) {
-                uf.union((i-1)*len+j-1, (i-1)*len+j-2);// connect to right neighbour
-                uf2.union((i-1)*len+j-1, (i-1)*len+j-2);
-            }
-            if (j < len && isOpen(i, j+1)) {
-                uf.union((i-1)*len+j-1, (i-1)*len+j);// connect to left neighbour
-                uf2.union((i-1)*len+j-1, (i-1)*len+j);
-            }
-        } else {
-            throw new IndexOutOfBoundsException();
-        }
-    }
-    public boolean isOpen(row,  col) {
-        if (checkIndex(i, j)) {
-            return opened[i-1][j-1];
-                numberofsites ++; // increase the number of open sites
-
-
-        }
-        throw new IndexOutOfBoundsException();
-    }
-
-    public boolean isFull( row,col) {
-        if (checkIndex(i, j)) {
-            return uf2.connected((i-1)*len+j-1, top);
-        }
-        throw new IndexOutOfBoundsException();
-    }
-    public int numberOfOpenSites()
-         {
-            return numberofsites ;    // Number of open sites.
-         }
-
-        public boolean percolates()
-       {
-
-            return uf.connected(top, bottom);
-
         }
 
+// Connect the top to the first (row,col) and the bottom the last (row,col) in maped one
+        for (int col = 0; col < n; col++) {
+            uf.union(top, encode(0, col));
+        }
+        for (int col = 0; col < n; col++) {
+            uf.union(bottom, encode(n - 1, col));
+        }
+    }
 
+// An integer ID (1...N) for site (row, col).
+    private int encode(int row, int col) {
+        return ((row * size) + col) + 1;
+    }
 
+    // Open site (i, j) if it is not open already.
+    public void open(int i, int j) {
+        int row = i - 1;
+        int col = j - 1;
+        if (grid[row][col])
+            return;
+        if (checkIndexBound(row, col)) {
+            grid[row][col] = true;
+            numberofsites++; // increase the number of open sites
+        }
 
+        if (row - 1 >= 0 && isOpen(row - 1, col))
+            uf.union(encode(row, col), topp(row, col)); // connect to top neighbour
+        if (row + 1 < size && isOpen(row + 1, col))
+            uf.union(encode(row, col), bottomm(row, col)); // connect to bottom neighbour
+        if (col - 1 >= 0 && isOpen(row, col - 1))
+            uf.union(encode(row, col), left(row, col)); // connect to left neighbour
+        if (col + 1 < size && isOpen(row - 1, col))
+            uf.union(encode(row, col), right(row, col)); // connect to right neighbour
 
+    }
 
+    private int topp(int row, int col) {
+        return (encode(row, col));
+    }
 
+    private int bottomm(int row, int col) {
+        return (encode(row, col));
+    }
+
+    private int left(int row, int col) {
+        return (encode(row, col));
+    }
+
+    private int right(int row, int col) {
+        return (encode(row, col));
+    }
+
+    // Is site (row, col) open?
+    public boolean isOpen(int i, int j) {
+        int row = i - 1;
+        int col = j - 1;
+        if (checkIndexBound(row, col))
+            return grid[row][col];
+        throw new IndexOutOfBoundsException("Index out of range");
+    }
+
+    // Is site (row, col) full?
+    public boolean isFull(int i, int j) {
+        int row = i - 1;
+        int col = j - 1;
+        if (checkIndexBound(row, col))
+            return (uf.connected(encode(row, col), top) && isOpen(row, col));
+        throw new IndexOutOfBoundsException("Index out of range");
+    }
+
+    // Number of open sites.
+    public int numberOfOpenSites() {
+        return numberofsites;
+    }
+
+    // Does the system percolate?
+    public boolean percolates() {
+        return uf.connected(top, bottom);
+
+    }
+
+// Checks if the row and column are within the range of the grid
+    // Is it within the range??
+    private boolean checkIndexBound(int row, int col) {
+        if (row < 0 || row > size || col < 0 || col > size)
+            return false;
+        return true;
+
+    }
 }
