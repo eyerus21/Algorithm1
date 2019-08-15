@@ -1,1 +1,1 @@
-# Algoritm1
+# Algoritm week 1
